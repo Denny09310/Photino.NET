@@ -1,5 +1,12 @@
 ﻿using System.Runtime.InteropServices;
 
+
+#if NET7_0_OR_GREATER
+
+using System.Runtime.InteropServices.Marshalling;
+
+#endif
+
 namespace Photino.NET;
 
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
@@ -224,3 +231,32 @@ internal struct PhotinoNativeParameters
         return response;
     }
 }
+
+#if NET7_0_OR_GREATER
+
+[CustomMarshaller(typeof(PhotinoNativeParameters), MarshalMode.ManagedToUnmanagedRef, typeof(PhotinoNativeParametersMarshaller))]
+internal static class PhotinoNativeParametersMarshaller
+{
+    public static nint ConvertToUnmanaged(PhotinoNativeParameters managed)
+    {
+        var pointer = Marshal.AllocHGlobal(managed.Size);
+        
+        try
+        {
+            Marshal.StructureToPtr(managed, pointer, false);
+            return pointer;
+        }
+        catch
+        {
+            Marshal.FreeHGlobal(pointer);
+            throw;
+        }
+    }
+
+    public static PhotinoNativeParameters ConvertToManaged(nint unmanaged)
+    {
+        return Marshal.PtrToStructure<PhotinoNativeParameters>(unmanaged);
+    }
+} 
+
+#endif

@@ -1,11 +1,18 @@
 using System.Runtime.InteropServices;
 
+#if NET7_0_OR_GREATER
+
+using System.Runtime.InteropServices.Marshalling;
+
+#endif
+
 namespace Photino.NET;
 
 /* TODO: 
 
     CTOR-DTOR:
-    -   Check why Photino_ctor with custom marshaller not working
+    -   Check why Photino_ctor with custom marshaller not working, error "Initial parameters passed are 0 bytes, but expected 520 bytes."
+        even if the Size property inside the PhotinoNativeParameters is 520
 
     GET:
     -   Check why Photino_GetResizable when ported to LibrayImport is not working correctly 
@@ -46,8 +53,19 @@ public partial class PhotinoWindow
 
     //CTOR-DTOR
 
-    [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl, SetLastError = true, CharSet = CharSet.Auto)] static extern IntPtr Photino_ctor(ref PhotinoNativeParameters parameters);
+#if NET7_0_OR_GREATER
+
+    [LibraryImport(DLL_NAME, SetLastError = true)]
+    [UnmanagedCallConv(CallConvs = new Type[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
+    private static partial IntPtr Photino_ctor([MarshalUsing(typeof(PhotinoNativeParametersMarshaller))] ref PhotinoNativeParameters parameters);
     //necessary? - [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)] static extern void Photino_dtor(IntPtr instance);  
+
+#else
+
+    [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl, SetLastError = true, CharSet = CharSet.Auto)] static extern IntPtr Photino_ctor(ref PhotinoNativeParameters parameters);
+    //necessary? - [DllImport(DLL_NAME, CallingConvention = CallingConvention.Cdecl)] static extern void Photino_dtor(IntPtr instance);    
+
+#endif
 
 
 #if NET7_0_OR_GREATER
